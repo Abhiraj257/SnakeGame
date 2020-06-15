@@ -12,6 +12,54 @@
       margin: 0;
     }
 
+    input {
+      position: relative;
+      /*
+      top: 60px;
+      right: 50px; */
+      height: 30px;
+      width: 100%;
+      outline: none;
+      background: green;
+    }
+
+    p {
+      /* position: absolute;
+      top: 80px;
+      right: 110px; */
+      font-size: 1.4rem;
+    }
+
+    h4 {
+      margin: 10px 0;
+      /*
+      position: absolute;
+      top: 10px;
+      right: 40px; */
+      font-size: 30px;
+      font-weight: 200;
+    }
+
+    div {
+      position: absolute;
+      top: 10px;
+      right: 50px;
+    }
+
+    .min,
+    .max {
+      position: absolute;
+      top: 80px;
+    }
+
+    .min {
+      left: 0;
+    }
+
+    .max {
+      right: 0;
+    }
+
     canvas {
       display: block;
     }
@@ -21,12 +69,24 @@
 </head>
 
 <body>
+  <div>
+
+    <h4>Slide to change speed</h4>
+    <input type="range" name="speed" min="1" max="100" id="slider" value='10'>
+    <div class="min">1</div>
+    <div class="max">100</div>
+    <p id="speed">Speed:</p>
+  </div>
   <script>
     let scene, camera, renderer, width = window.innerWidth, height = window.innerHeight, controls, clock = new THREE.Clock()
 
     const snake = [], cube = new THREE.BoxGeometry(1, 1, 1)
 
-    let freq = .1, theta = 0.0, BodyColor = 0xff8e3c, HeadColor = 0xffffff
+    const speedVal = document.getElementById('speed'), sliderVal = document.getElementById('slider')
+
+    console.log(sliderVal.value)
+
+    let freq, theta = 0.0, BodyColor = 0xff8e3c, HeadColor = 0xffffff
 
     const lightPos = [new THREE.Vector3(0, 50, 20), new THREE.Vector3(0, 15, -20), new THREE.Vector3(-20, 15, 20), new THREE.Vector3(20, -15, 0)];
 
@@ -40,19 +100,24 @@
 
     scoreDiv.innerHTML = `Score: ${score}`
 
+    let black1, black2
+
     const init = () => {
       scene = new THREE.Scene()
 
-      scene.background = new THREE.Color(0x62aaee)
+      scene.background = new THREE.Color(0x81bbf1)
       aspectRatio = width / height
 
       camera = new THREE.PerspectiveCamera(45, aspectRatio, 0.1, 1000)
+      cube.center()
       camera.position.set(0, 40, 40)
 
       renderer = new THREE.WebGLRenderer({ antialias: true })
       // console.log(this)
       renderer.setSize(width, height)
       document.body.appendChild(renderer.domElement)
+
+
 
       lightPos.forEach(v => {
         const light = new THREE.PointLight(0xffffff, 1, 100);
@@ -66,7 +131,11 @@
       }
       // console.log(new createCube(cube, new THREE.MeshPhongMaterial({ color: "#467" }), new THREE.Vector3(5 - halfCube + 0.5, 0.5, 0.5), scene, false))
 
-      food = new createCube(cube, new THREE.MeshPhongMaterial({ color: 0xc62828 }), foodLocation(), scene, false)
+      food = new createSphere(new THREE.SphereGeometry(.5, 32, 32), new THREE.MeshPhongMaterial({ color: 0xc62828 }), foodLocation(), scene)
+
+      black1 = new createCube(cube, new THREE.LineBasicMaterial({ color: 0x000000 }), new THREE.Vector3(1.5, 1.5, 1.5), scene, false)
+      // black1.center()
+      black2 = new createCube(cube, new THREE.LineBasicMaterial({ color: 0x000000 }), new THREE.Vector3(7.5, 7.5, 7.5), scene, false)
 
       new createCube(gameCube, new THREE.LineBasicMaterial({ color: 0xffffff }), new THREE.Vector3(0, 0, 0), scene, true).setPosition(0, 0, 0)
 
@@ -80,7 +149,17 @@
       document.body.appendChild(scoreDiv)
     }
 
+    const createSphere = function (geometry, material, vector, scene) {
+      this.mesh = new THREE.Mesh(geometry, material)
+      scene.add(this.mesh)
+      this.mesh.position.set(vector.x, vector.y, vector.z)
+      this.setPosition = vector => {
+        this.mesh.position.set(vector.x, vector.y, vector.z)
+      }
+    }
+
     const createCube = function (geometry, material, vector, scene, wireFrame = true) {
+      // this.geometry =
       this.mesh = new THREE.Mesh(geometry, material)
       if (!wireFrame) {
         this.mesh.position.set(vector.x, vector.y, vector.z)
@@ -116,6 +195,9 @@
 
     const animate = () => {
       // console.log(this)
+      // console.log(sliderVal.value)
+      freq = 1 / sliderVal.value
+      speedVal.innerHTML = `Speed: ${sliderVal.value}`
       window.requestAnimationFrame(animate)
       theta += clock.getDelta()
       if (theta > freq) {
@@ -129,6 +211,22 @@
         tail.setPosition(newDir)
         snake.push(tail)
         head = tail
+        for (let i = snake.length - 1; i > -1; i--) {
+          if (snake[i].mesh.position.distanceTo(black1.mesh.position) < 1) {
+            const nD = new THREE.Vector3(snake[i].mesh.position.x + 6 + direction.x, snake[i].mesh.position.y + 6 + direction.y, snake[i].mesh.position.z + 6 + direction.z)
+            snake[i].setPosition(nD)
+          }
+
+
+        }
+        for (let i = snake.length - 1; i > -1; i--) {
+          if (snake[i].mesh.position.distanceTo(black2.mesh.position) < 1) {
+            const nD = new THREE.Vector3(snake[i].mesh.position.x - 6 + direction.x, snake[i].mesh.position.y - 6 + direction.y, snake[i].mesh.position.z - 6 + direction.z)
+            snake[i].setPosition(nD)
+          }
+
+
+        }
         for (let i = snake.length - 2; i > -1; i--) {
           if (head.mesh.position.distanceTo(snake[i].mesh.position) < 1) {
             finish = true
