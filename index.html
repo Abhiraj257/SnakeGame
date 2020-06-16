@@ -140,6 +140,8 @@
       new createCube(gameCube, new THREE.LineBasicMaterial({ color: 0xffffff }), new THREE.Vector3(0, 0, 0), scene, true).setPosition(0, 0, 0)
 
       controls = new THREE.OrbitControls(camera, renderer.domElement)
+
+      controls.enableKeys = false;
       scoreDiv.style.position = "absolute";
       scoreDiv.style.width = 200;
       scoreDiv.style.height = 100;
